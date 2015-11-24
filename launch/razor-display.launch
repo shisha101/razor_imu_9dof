@@ -1,6 +1,8 @@
 <launch>
 
-  <node pkg="razor_imu_9dof" type="display_3D_visualization.py" name="display_3D_visualization_node" output="screen">
+  <node pkg="imu_visualization" type="display_3D_visualization.py" name="display_3D_visualization_node" output="screen">
+	<param name="imu_topic" value="imu" />
+	<param name="imu_name" value="9DOF Razor" />
   </node>
   
 </launch>
