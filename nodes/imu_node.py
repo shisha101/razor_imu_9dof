@@ -34,7 +34,8 @@ import math
 import sys
 
 #from time import time
-from sensor_msgs.msg import Imu
+from sensor_msgs.msg import Imu, MagneticField
+from geometry_msgs.msg import Vector3
 from tf.transformations import quaternion_from_euler
 from dynamic_reconfigure.server import Server
 from razor_imu_9dof.cfg import imuConfig
@@ -53,13 +54,29 @@ def reconfig_callback(config, level):
     return config
 
 rospy.init_node("razor_node")
-#We only care about the most recent measurement, i.e. queue_size=1
-pub = rospy.Publisher('imu', Imu, queue_size=1)
+# Topic names (defaults and exposed to parameters)
+imu_name = "razor_imu"
+filterd_imu_data_tn = rospy.get_param('filterd_imu_data_topic_name', "/sensor/imu/"+imu_name+"/data")
+raw_imu_data_tn = rospy.get_param('raw_imu_data_topic_name', "/sensor/imu/"+imu_name+"/raw")
+raw_magF_tn = rospy.get_param('raw_magnetic_field_data_topic_name', "/sensor/imu/"+imu_name+"/mag_raw")
+calib_magF_tn = rospy.get_param('calib_magnetic_field_data_topic_name', "/sensor/imu/"+imu_name+"/mag_calib")
+on_board_imu_rpy_tn = rospy.get_param('calib_magnetic_field_data_topic_name', "/sensor/imu/"+imu_name+"/rpy_onboard")
+
+#We only care about the most recent measurement, i.e. queue_size=1Vector3
+imu_pub = rospy.Publisher(filterd_imu_data_tn, Imu, queue_size=1)
+imu_pub_raw = rospy.Publisher(raw_imu_data_tn, Imu, queue_size=1)
+mag_pub_raw = rospy.Publisher(raw_magF_tn, MagneticField, queue_size=1)
+mag_pub = rospy.Publisher(calib_magF_tn, MagneticField, queue_size=1)
+rpy_pub = rospy.Publisher(on_board_imu_rpy_tn, Vector3, queue_size=1)
 srv = Server(imuConfig, reconfig_callback)  # define dynamic_reconfigure callback
 diag_pub = rospy.Publisher('diagnostics', DiagnosticArray, queue_size=1)
 diag_pub_time = rospy.get_time();
 
 imuMsg = Imu()
+imuMsg_raw = Imu()
+magMsg = MagneticField()
+magMsg_raw = MagneticField()
+rpy = Vector3()
 
 # Orientation covariance estimation:
 # Observed orientation noise: 0.3 degrees in x, y, 0.6 degrees in z
@@ -220,7 +237,7 @@ rospy.loginfo("Publishing IMU data...")
 
 while not rospy.is_shutdown():
     line = ser.readline()
-    line = line.replace("#YPRAG=","")   # Delete "#YPRAG="
+    line = line.replace("#YPRAGM=","")   # Delete "#YPRAG="
     #f.write(line)                     # Write to the output log file
     words = string.split(line,",")    # Fields split
     if len(words) > 2:
@@ -232,22 +249,44 @@ while not rospy.is_shutdown():
         if yaw_deg < -180.0:
             yaw_deg = yaw_deg + 360.0
         yaw = yaw_deg*degrees2rad
+	rpy.z = yaw_deg
         #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
         pitch = -float(words[1])*degrees2rad
+	rpy.y = -float(words[1])
         roll = float(words[2])*degrees2rad
-
+	rpy.x = float(words[2])
         # Publish message
         # AHRS firmware accelerations are negated
         # This means y and z are correct for ROS, but x needs reversing
         imuMsg.linear_acceleration.x = -float(words[3]) * accel_factor
         imuMsg.linear_acceleration.y = float(words[4]) * accel_factor
         imuMsg.linear_acceleration.z = float(words[5]) * accel_factor
+	#used for raw data message
+	imuMsg_raw.linear_acceleration.x = float(words[3]) * accel_factor
+        imuMsg_raw.linear_acceleration.y = float(words[4]) * accel_factor
+        imuMsg_raw.linear_acceleration.z = float(words[5]) * accel_factor
 
         imuMsg.angular_velocity.x = float(words[6])
         #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
         imuMsg.angular_velocity.y = -float(words[7])
         #in AHRS firmware z axis points down, in ROS z axis points up (see REP 103) 
         imuMsg.angular_velocity.z = -float(words[8])
+	#used for raw data message
+	imuMsg_raw.angular_velocity.x = float(words[6])
+	imuMsg_raw.angular_velocity.y = float(words[7])
+	imuMsg_raw.angular_velocity.z = float(words[8])
+
+	#adding magnetic information
+	
+	magMsg.magnetic_field.x = float(words[9])
+	magMsg.magnetic_field.y = float(words[10])
+	magMsg.magnetic_field.z = float(words[11])
+
+	magMsg_raw.magnetic_field.x = float(words[9])
+	magMsg_raw.magnetic_field.y = float(words[10])
+	magMsg_raw.magnetic_field.z = float(words[11])
+	
+	
 
     q = quaternion_from_euler(roll,pitch,yaw)
     imuMsg.orientation.x = q[0]
@@ -257,8 +296,14 @@ while not rospy.is_shutdown():
     imuMsg.header.stamp= rospy.Time.now()
     imuMsg.header.frame_id = 'base_imu_link'
     imuMsg.header.seq = seq
+    imuMsg_raw.header.frame_id = 'base_imu_link'
+    imuMsg_raw.header.seq = seq
     seq = seq + 1
-    pub.publish(imuMsg)
+    imu_pub.publish(imuMsg)
+    imu_pub_raw.publish(imuMsg_raw)
+    mag_pub.publish(magMsg)
+    mag_pub_raw.publish(magMsg_raw)
+    rpy_pub.publish(rpy)
 
     if (diag_pub_time < rospy.get_time()) :
         diag_pub_time += 1
