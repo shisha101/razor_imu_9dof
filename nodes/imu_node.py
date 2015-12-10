@@ -252,36 +252,36 @@ while not rospy.is_shutdown():
         yaw = yaw_deg*degrees2rad
     rpy.z = yaw_deg
         #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
-        pitch = -float(words[1])*degrees2rad
+    pitch = -float(words[1])*degrees2rad
     rpy.y = -float(words[1])
-        roll = float(words[2])*degrees2rad
+    roll = float(words[2])*degrees2rad
     rpy.x = float(words[2])
-        ## Publish message
-        #fill in header infromation
-        imuMsg.frame_id = frame_name
-        imuMsg.time = rospy.Time.now()
-        imuMsg_raw.frame_id = frame_name
-        imuMsg_raw.time = rospy.Time.now()
-        magMsg.frame_id = frame_name
-        magMsg.time = rospy.Time.now()
-        magMsg_raw.frame_id = frame_name
-        magMsg_raw.time = rospy.Time.now()
+    ## Publish message
+    #fill in header infromation
+    imuMsg.header.frame_id = frame_name
+    imuMsg.header.stamp = rospy.Time.now()
+    imuMsg_raw.header.frame_id = frame_name
+    imuMsg_raw.header.stamp = rospy.Time.now()
+    magMsg.header.frame_id = frame_name
+    magMsg.header.stamp = rospy.Time.now()
+    magMsg_raw.header.frame_id = frame_name
+    magMsg_raw.header.stamp = rospy.Time.now()
 
-        # AHRS firmware accelerations are negated
-        # This means y and z are correct for ROS, but x needs reversing
-        imuMsg.linear_acceleration.x = -float(words[3]) * accel_factor
-        imuMsg.linear_acceleration.y = float(words[4]) * accel_factor
-        imuMsg.linear_acceleration.z = float(words[5]) * accel_factor
+    # AHRS firmware accelerations are negated
+    # This means y and z are correct for ROS, but x needs reversing
+    imuMsg.linear_acceleration.x = -float(words[3]) * accel_factor
+    imuMsg.linear_acceleration.y = float(words[4]) * accel_factor
+    imuMsg.linear_acceleration.z = float(words[5]) * accel_factor
     #used for raw data message
     imuMsg_raw.linear_acceleration.x = float(words[3]) * accel_factor
-        imuMsg_raw.linear_acceleration.y = float(words[4]) * accel_factor
-        imuMsg_raw.linear_acceleration.z = float(words[5]) * accel_factor
+    imuMsg_raw.linear_acceleration.y = float(words[4]) * accel_factor
+    imuMsg_raw.linear_acceleration.z = float(words[5]) * accel_factor
 
-        imuMsg.angular_velocity.x = float(words[6])
-        #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
-        imuMsg.angular_velocity.y = -float(words[7])
-        #in AHRS firmware z axis points down, in ROS z axis points up (see REP 103) 
-        imuMsg.angular_velocity.z = -float(words[8])
+    imuMsg.angular_velocity.x = float(words[6])
+    #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
+    imuMsg.angular_velocity.y = -float(words[7])
+    #in AHRS firmware z axis points down, in ROS z axis points up (see REP 103) 
+    imuMsg.angular_velocity.z = -float(words[8])
     #used for raw data message
     imuMsg_raw.angular_velocity.x = float(words[6])
     imuMsg_raw.angular_velocity.y = float(words[7])
@@ -304,11 +304,10 @@ while not rospy.is_shutdown():
     imuMsg.orientation.y = q[1]
     imuMsg.orientation.z = q[2]
     imuMsg.orientation.w = q[3]
-    imuMsg.header.stamp= rospy.Time.now()
-    imuMsg.header.frame_id = 'base_imu_link'
     imuMsg.header.seq = seq
-    imuMsg_raw.header.frame_id = 'base_imu_link'
     imuMsg_raw.header.seq = seq
+    magMsg.header.seq = seq
+    magMsg_raw.header.seq = seq
     seq = seq + 1
     imu_pub.publish(imuMsg)
     imu_pub_raw.publish(imuMsg_raw)
@@ -320,7 +319,7 @@ while not rospy.is_shutdown():
         diag_pub_time += 1
         diag_arr = DiagnosticArray()
         diag_arr.header.stamp = rospy.get_rostime()
-        diag_arr.header.frame_id = '1'
+        diag_arr.header.frame_id = frame_name
         diag_msg = DiagnosticStatus()
         diag_msg.name = 'Razor_Imu'
         diag_msg.level = DiagnosticStatus.OK
