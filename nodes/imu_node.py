@@ -61,7 +61,7 @@ raw_imu_data_tn = rospy.get_param('raw_imu_data_topic_name', "/sensor/imu/"+imu_
 raw_magF_tn = rospy.get_param('raw_magnetic_field_data_topic_name', "/sensor/imu/"+imu_name+"/mag_raw")
 calib_magF_tn = rospy.get_param('calib_magnetic_field_data_topic_name', "/sensor/imu/"+imu_name+"/mag_calib")
 on_board_imu_rpy_tn = rospy.get_param('calib_magnetic_field_data_topic_name', "/sensor/imu/"+imu_name+"/rpy_onboard")
-frame_name = rospy.get_param('frame_name',"imu_razor_position")
+frame_name = rospy.get_param('frame_name',"imu_razor_position_link")
 
 #We only care about the most recent measurement, i.e. queue_size=1Vector3
 imu_pub = rospy.Publisher(filterd_imu_data_tn, Imu, queue_size=1)
