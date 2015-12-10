@@ -250,70 +250,70 @@ while not rospy.is_shutdown():
         if yaw_deg < -180.0:
             yaw_deg = yaw_deg + 360.0
         yaw = yaw_deg*degrees2rad
-    rpy.z = yaw_deg
+        rpy.z = yaw_deg
+            #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
+        pitch = -float(words[1])*degrees2rad
+        rpy.y = -float(words[1])
+        roll = float(words[2])*degrees2rad
+        rpy.x = float(words[2])
+        ## Publish message
+        #fill in header infromation
+        imuMsg.header.frame_id = frame_name
+        imuMsg.header.stamp = rospy.Time.now()
+        imuMsg_raw.header.frame_id = frame_name
+        imuMsg_raw.header.stamp = rospy.Time.now()
+        magMsg.header.frame_id = frame_name
+        magMsg.header.stamp = rospy.Time.now()
+        magMsg_raw.header.frame_id = frame_name
+        magMsg_raw.header.stamp = rospy.Time.now()
+    
+        # AHRS firmware accelerations are negated
+        # This means y and z are correct for ROS, but x needs reversing
+        imuMsg.linear_acceleration.x = -float(words[3]) * accel_factor
+        imuMsg.linear_acceleration.y = float(words[4]) * accel_factor
+        imuMsg.linear_acceleration.z = float(words[5]) * accel_factor
+        #used for raw data message
+        imuMsg_raw.linear_acceleration.x = float(words[3]) * accel_factor
+        imuMsg_raw.linear_acceleration.y = float(words[4]) * accel_factor
+        imuMsg_raw.linear_acceleration.z = float(words[5]) * accel_factor
+    
+        imuMsg.angular_velocity.x = float(words[6])
         #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
-    pitch = -float(words[1])*degrees2rad
-    rpy.y = -float(words[1])
-    roll = float(words[2])*degrees2rad
-    rpy.x = float(words[2])
-    ## Publish message
-    #fill in header infromation
-    imuMsg.header.frame_id = frame_name
-    imuMsg.header.stamp = rospy.Time.now()
-    imuMsg_raw.header.frame_id = frame_name
-    imuMsg_raw.header.stamp = rospy.Time.now()
-    magMsg.header.frame_id = frame_name
-    magMsg.header.stamp = rospy.Time.now()
-    magMsg_raw.header.frame_id = frame_name
-    magMsg_raw.header.stamp = rospy.Time.now()
-
-    # AHRS firmware accelerations are negated
-    # This means y and z are correct for ROS, but x needs reversing
-    imuMsg.linear_acceleration.x = -float(words[3]) * accel_factor
-    imuMsg.linear_acceleration.y = float(words[4]) * accel_factor
-    imuMsg.linear_acceleration.z = float(words[5]) * accel_factor
-    #used for raw data message
-    imuMsg_raw.linear_acceleration.x = float(words[3]) * accel_factor
-    imuMsg_raw.linear_acceleration.y = float(words[4]) * accel_factor
-    imuMsg_raw.linear_acceleration.z = float(words[5]) * accel_factor
-
-    imuMsg.angular_velocity.x = float(words[6])
-    #in AHRS firmware y axis points right, in ROS y axis points left (see REP 103)
-    imuMsg.angular_velocity.y = -float(words[7])
-    #in AHRS firmware z axis points down, in ROS z axis points up (see REP 103) 
-    imuMsg.angular_velocity.z = -float(words[8])
-    #used for raw data message
-    imuMsg_raw.angular_velocity.x = float(words[6])
-    imuMsg_raw.angular_velocity.y = float(words[7])
-    imuMsg_raw.angular_velocity.z = float(words[8])
-
-    #adding magnetic information
+        imuMsg.angular_velocity.y = -float(words[7])
+        #in AHRS firmware z axis points down, in ROS z axis points up (see REP 103) 
+        imuMsg.angular_velocity.z = -float(words[8])
+        #used for raw data message
+        imuMsg_raw.angular_velocity.x = float(words[6])
+        imuMsg_raw.angular_velocity.y = float(words[7])
+        imuMsg_raw.angular_velocity.z = float(words[8])
     
-    magMsg.magnetic_field.x = float(words[9])
-    magMsg.magnetic_field.y = float(words[10])
-    magMsg.magnetic_field.z = float(words[11])
-
-    magMsg_raw.magnetic_field.x = float(words[9])
-    magMsg_raw.magnetic_field.y = float(words[10])
-    magMsg_raw.magnetic_field.z = float(words[11])
+        #adding magnetic information
+        
+        magMsg.magnetic_field.x = float(words[9])
+        magMsg.magnetic_field.y = float(words[10])
+        magMsg.magnetic_field.z = float(words[11])
     
+        magMsg_raw.magnetic_field.x = float(words[9])
+        magMsg_raw.magnetic_field.y = float(words[10])
+        magMsg_raw.magnetic_field.z = float(words[11])
+        
+        
     
-
-    q = quaternion_from_euler(roll,pitch,yaw)
-    imuMsg.orientation.x = q[0]
-    imuMsg.orientation.y = q[1]
-    imuMsg.orientation.z = q[2]
-    imuMsg.orientation.w = q[3]
-    imuMsg.header.seq = seq
-    imuMsg_raw.header.seq = seq
-    magMsg.header.seq = seq
-    magMsg_raw.header.seq = seq
-    seq = seq + 1
-    imu_pub.publish(imuMsg)
-    imu_pub_raw.publish(imuMsg_raw)
-    mag_pub.publish(magMsg)
-    mag_pub_raw.publish(magMsg_raw)
-    rpy_pub.publish(rpy)
+        q = quaternion_from_euler(roll,pitch,yaw)
+        imuMsg.orientation.x = q[0]
+        imuMsg.orientation.y = q[1]
+        imuMsg.orientation.z = q[2]
+        imuMsg.orientation.w = q[3]
+        imuMsg.header.seq = seq
+        imuMsg_raw.header.seq = seq
+        magMsg.header.seq = seq
+        magMsg_raw.header.seq = seq
+        seq = seq + 1
+        imu_pub.publish(imuMsg)
+        imu_pub_raw.publish(imuMsg_raw)
+        mag_pub.publish(magMsg)
+        mag_pub_raw.publish(magMsg_raw)
+        rpy_pub.publish(rpy)
 
     if (diag_pub_time < rospy.get_time()) :
         diag_pub_time += 1
