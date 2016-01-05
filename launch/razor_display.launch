@@ -1,8 +1,9 @@
 <launch>
 
   <node pkg="imu_visualization" type="display_3D_visualization.py" name="display_3D_visualization_node" output="screen">
-	<param name="imu_topic" value="imu" />
+	<param name="imu_topic" value="/sensor/imu/razor_imu/data" />
+	<param name="mag_topic" value="/sensor/imu/razor_imu/mag_raw" />
 	<param name="imu_name" value="9DOF Razor" />
   </node>
-  
+
 </launch>
