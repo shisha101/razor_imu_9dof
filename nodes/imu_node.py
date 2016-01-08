@@ -289,9 +289,9 @@ while not rospy.is_shutdown():
     
         #adding magnetic information
         
-        # magetometer is completely reversed wrt accelerometer and gyro frame thus the need for -1.0*Value
-        magMsg.magnetic_field.x = -1.0*float(words[10])# magnetometer has switched axis x and y
-        magMsg.magnetic_field.y = -1.0*float(words[9])# magnetometer has switched axis x and y
+        #in AHRS firmware z axis points down, in ROS z axis points up (see REP 103) 
+        magMsg.magnetic_field.x = float(words[10])# magnetometer has switched axis x and y
+        magMsg.magnetic_field.y = float(words[9])# magnetometer has switched axis x and y
         magMsg.magnetic_field.z = -1.0*float(words[11])
     
         magMsg_raw.magnetic_field.x = -1.0*float(words[10])# magnetometer has switched axis x and y
